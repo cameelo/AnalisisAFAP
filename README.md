@@ -90,12 +90,18 @@ contienen datos personales. Para regenerarlos: `python tests/test_golden.py --up
 
 ## Publicación en GitHub Pages
 
-Settings → Pages → Source: rama `main`, carpeta `/` (la raíz). El sitio queda en
-`usuario.github.io/repo/web/`.
+Settings → Pages → Source: rama `main`, carpeta `/` (la raíz).
 
 Tiene que publicarse desde la raíz, no desde `/web`: la página carga `../afap_core.py`
 para no tener una copia del análisis. (Si preferís publicar sólo `web/`, copiá
 `afap_core.py` dentro de esa carpeta — `app.js` prueba las dos ubicaciones.)
+
+Dos archivos hacen falta para que eso funcione:
+
+- `index.html` en la raíz redirige a `web/`. Sin él, la raíz muestra este README.
+- `.nojekyll` desactiva Jekyll, que si no se mete a procesar los archivos del sitio.
+
+El sitio queda en `https://cameelo.github.io/AnalisisAFAP/`.
 
 Antes de hacer público el repositorio, confirmá que no quedó ningún dato personal:
 
