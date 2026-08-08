@@ -1,0 +1,21 @@
+# DATOS PERSONALES — nada de esto puede llegar al repositorio.
+# Los estados de cuenta traen nombre, dirección, cédula, número de afiliado y los
+# montos de la cuenta. El repo está pensado para ser público: el sitio sólo genera
+# confianza si cualquiera puede leer el código y comprobar que los documentos no
+# salen del navegador, y eso no sirve de nada si los documentos están acá adentro.
+EstadosDeCuenta/
+*.pdf
+datos_extraidos.json
+informe_afap.html
+
+# Golden de las pruebas: se genera desde los PDFs propios y contiene los mismos
+# datos personales (líneas completas de los documentos, saldos, aportes).
+tests/statements_golden.json
+tests/lines_golden.json
+tests/pdfjs_lines.json
+
+# Dependencias y temporales
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store

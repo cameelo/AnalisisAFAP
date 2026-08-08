@@ -1,0 +1,12 @@
+{
+  "name": "analisis-afap",
+  "private": true,
+  "type": "module",
+  "description": "Sitio estático para analizar estados de cuenta de República AFAP en el navegador. Este package.json sólo existe para poder correr la verificación de paridad de líneas (tests/verify_lines.mjs) desde Node; el sitio no tiene build ni dependencias en producción.",
+  "scripts": {
+    "verify-lines": "node tests/verify_lines.mjs"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "4.7.76"
+  }
+}

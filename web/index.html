@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizá tu cuenta AFAP</title>
+<meta name="description" content="Subí tus estados de cuenta de República AFAP y mirá cuánto aportaste, cuánto se fue en comisiones y si tu ahorro le ganó a la inflación. Los archivos no salen de tu navegador.">
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5;
+        color: #1a1a2e;
+        line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    header {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        color: white;
+        padding: 48px 20px;
+        text-align: center;
+    }
+    header h1 { font-size: 2em; margin-bottom: 10px; }
+    header p { opacity: 0.85; font-size: 1.1em; max-width: 620px; margin: 0 auto; }
+
+    .privacy {
+        background: #e8f6ef;
+        border: 1px solid #b7e0cd;
+        border-left: 4px solid #27ae60;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: -28px auto 30px;
+        max-width: 860px;
+    }
+    .privacy strong { color: #1e7a4c; }
+    .privacy p + p { margin-top: 8px; font-size: 0.9em; color: #4a6b5c; }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card h2 { font-size: 1.25em; margin-bottom: 12px; }
+    .card p { color: #555; }
+    .card h3 { font-size: 1em; margin: 18px 0 6px; }
+
+    #dropzone {
+        border: 2px dashed #b9c2cc;
+        border-radius: 12px;
+        padding: 44px 20px;
+        text-align: center;
+        color: #6b7681;
+        cursor: pointer;
+        transition: border-color .15s, background .15s;
+    }
+    #dropzone:hover, #dropzone.dragging { border-color: #0f3460; background: #f4f7fb; }
+    #dropzone strong { display: block; font-size: 1.1em; color: #1a1a2e; margin-bottom: 6px; }
+    #file-input { display: none; }
+
+    #files { list-style: none; margin-top: 20px; }
+    #files li {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+        font-size: 0.92em;
+    }
+    #files .name { font-weight: 600; flex: 1; word-break: break-all; }
+    #files .detail { color: #777; }
+    #files .badge { font-size: 0.85em; white-space: nowrap; }
+    .badge.ok { color: #1e7a4c; }
+    .badge.warn { color: #b8860b; }
+    .badge.error { color: #c0392b; }
+    .badge.pending { color: #888; }
+
+    button {
+        font: inherit;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        cursor: pointer;
+        background: #0f3460;
+        color: white;
+    }
+    button:disabled { background: #b9c2cc; cursor: not-allowed; }
+    button.secondary { background: #e7ebf0; color: #1a1a2e; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; align-items: center; }
+
+    #status { margin-top: 16px; font-size: 0.9em; color: #555; }
+    progress { width: 100%; height: 8px; margin-top: 10px; }
+
+    .warnings {
+        background: #fff8e1;
+        border: 1px solid #f0d9a0;
+        border-left: 4px solid #f39c12;
+        border-radius: 8px;
+        padding: 14px 20px;
+        margin-top: 18px;
+        font-size: 0.9em;
+        color: #6b5518;
+    }
+    .warnings ul { margin-left: 18px; }
+
+    #report-card { display: none; }
+    #report {
+        width: 100%;
+        height: 78vh;
+        border: 1px solid #dde3ea;
+        border-radius: 8px;
+        background: white;
+    }
+
+    footer {
+        text-align: center;
+        padding: 30px 20px 50px;
+        color: #8b949e;
+        font-size: 0.85em;
+    }
+    footer a { color: #6b7681; }
+
+    details { margin-top: 10px; }
+    summary { cursor: pointer; font-weight: 600; color: #0f3460; }
+    details p, details ul { margin-top: 8px; }
+    details ul { margin-left: 20px; color: #555; }
+
+    @media (max-width: 600px) {
+        header h1 { font-size: 1.5em; }
+        .card { padding: 20px; }
+        #report { height: 65vh; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Analizá tu cuenta AFAP</h1>
+    <p>Subí tus estados de cuenta semestrales de República AFAP y mirá cuánto aportaste,
+       cuánto se fue en comisiones y seguros, y si tu ahorro le ganó a la inflación.</p>
+</header>
+
+<div class="container">
+
+    <div class="privacy">
+        <p><strong>Tus documentos no se suben a ningún servidor.</strong> Todo el análisis
+        ocurre dentro de tu navegador: los PDFs se leen en tu propia máquina y nunca salen
+        de ella. Podés desconectarte de internet después de que cargue la página y el
+        informe se genera igual.</p>
+        <p>El sitio es estático y su código es público, así que podés verificarlo vos mismo.</p>
+    </div>
+
+    <div class="card">
+        <h2>1. Cargá tus estados de cuenta</h2>
+        <p>Son los PDFs semestrales que emite República AFAP (uno por semestre, cierre en
+        junio y en diciembre). Cuantos más cargues, más completa queda la evolución.</p>
+
+        <div id="dropzone" role="button" tabindex="0" aria-label="Seleccionar archivos PDF">
+            <strong>Arrastrá los PDFs acá</strong>
+            o hacé clic para elegirlos
+        </div>
+        <input type="file" id="file-input" accept="application/pdf,.pdf" multiple>
+
+        <ul id="files"></ul>
+
+        <div class="actions">
+            <button id="generate" disabled>Generar informe</button>
+            <button id="clear" class="secondary" hidden>Empezar de nuevo</button>
+        </div>
+
+        <div id="status">Preparando el motor de análisis…</div>
+        <progress id="progress" max="100" value="0"></progress>
+    </div>
+
+    <div class="card" id="report-card">
+        <h2>2. Tu informe</h2>
+        <div class="actions" style="margin-top:0; margin-bottom:16px;">
+            <button id="download">Descargar informe</button>
+            <button id="open-tab" class="secondary">Abrir en otra pestaña</button>
+        </div>
+        <iframe id="report" title="Informe de la cuenta AFAP"></iframe>
+    </div>
+
+    <div class="card">
+        <h2>Cómo funciona</h2>
+        <p>El navegador extrae el texto de cada PDF con
+        <a href="https://mozilla.github.io/pdf.js/">pdf.js</a> y se lo pasa a un programa en
+        Python que corre también en el navegador, compilado a WebAssembly con
+        <a href="https://pyodide.org/">Pyodide</a>. Ese programa es el mismo que se usa
+        fuera del navegador, así que las cifras del informe no dependen de dónde se corra.</p>
+        <p>La primera vez hay que descargar Pyodide (unos 10 MB). Después queda en la
+        caché del navegador y la carga es inmediata.</p>
+
+        <details>
+            <summary>¿Cómo se calculan los ajustes por inflación?</summary>
+            <p>La inflación se mide con la <strong>Unidad Reajustable (UR)</strong>, que
+            aparece en los propios estados de cuenta, así que no hace falta ningún dato
+            externo.</p>
+            <p>Cada aporte se expresa en pesos de la fecha con la que se lo compara,
+            multiplicándolo por <code>UR de esa fecha / UR del momento del aporte</code>. La
+            suma de todos los aportes así ajustados es cuánto habría que tener hoy para
+            igualar el poder de compra de lo que se aportó. Si el saldo real está por
+            encima de esa suma, el ahorro le ganó a la inflación.</p>
+            <p>El informe muestra la comparación dos veces: contra el <em>neto invertido</em>
+            (lo que efectivamente entró al fondo) y contra los <em>aportes totales</em>
+            (incluyendo lo que se fue en comisiones y seguros).</p>
+            <p>El rendimiento del fondo por semestre se calcula aparte, con el valor de la
+            cuota: <code>real = (1 + nominal) / (1 + inflación) − 1</code>. Es el desempeño
+            del fondo en general, independiente de los aportes de cada uno.</p>
+        </details>
+
+        <details>
+            <summary>¿Qué pasa si me falta un semestre?</summary>
+            <p>Se estima a partir de los semestres vecinos: el saldo de apertura del
+            estado siguiente es el cierre del que falta, y el desglose entre aportes,
+            deducciones y rentabilidad se reparte con las proporciones de ese periodo. Los
+            periodos estimados aparecen marcados con un asterisco en la tabla del informe.</p>
+            <p>Si falta más de un semestre seguido, la estimación es más gruesa y el
+            informe lo avisa. Un archivo que no se pueda leer no interrumpe al resto: se
+            informa y se sigue con los demás.</p>
+        </details>
+    </div>
+
+</div>
+
+<footer>
+    <p>Este sitio no tiene relación con República AFAP ni con ninguna otra AFAP, y no es
+    asesoramiento financiero. Los cálculos se hacen sobre los datos de los estados de
+    cuenta que cargues y pueden contener errores; ante cualquier diferencia, vale lo que
+    diga tu AFAP.</p>
+</footer>
+
+<script type="module" src="./app.js"></script>
+
+</body>
+</html>

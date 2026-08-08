@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verificación de extracción — pdf.js vs PyMuPDF</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5; color: #1a1a2e; line-height: 1.6;
+    }
+    .container { max-width: 1000px; margin: 0 auto; padding: 30px 20px 60px; }
+    h1 { font-size: 1.5em; margin-bottom: 10px; }
+    p { color: #555; margin-bottom: 14px; }
+    .card {
+        background: white; border-radius: 12px; padding: 24px;
+        margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    input[type=file] { margin-top: 10px; }
+    #results { margin-top: 20px; }
+    .result { border-top: 1px solid #eee; padding: 12px 0; }
+    .result h3 { font-size: 1em; }
+    .ok { color: #1e7a4c; }
+    .regrouped { color: #b8860b; }
+    .fail { color: #c0392b; }
+    pre {
+        background: #f6f8fa; border-radius: 6px; padding: 12px;
+        overflow-x: auto; font-size: 0.8em; margin-top: 8px;
+    }
+    code { font-size: 0.9em; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="card">
+    <h1>Verificación de extracción</h1>
+    <p>Compara las líneas que produce <code>pdf-lines.js</code> con pdf.js contra las que
+    produce PyMuPDF en el CLI, congeladas en <code>tests/lines_golden.json</code>. Es la
+    verificación del paso más delicado del sitio: si los dos extractores no entregan el
+    mismo texto, el informe del navegador no coincide con el de la línea de comandos.</p>
+
+    <p>La condición dura es que <strong>no se pierda ni aparezca contenido</strong>: la
+    concatenación de todas las líneas tiene que ser idéntica. Que alguna línea quede
+    cortada en otro lugar no es un fallo — pdf.js entrega la frase
+    "Saldo … al … correspondiente …" de una pieza donde PyMuPDF la parte en tres, y el
+    parser lee las dos formas —, pero se lista para poder revisarlo.</p>
+
+    <p>Elegí los mismos PDFs que están en el golden:</p>
+    <input type="file" id="input" accept="application/pdf,.pdf" multiple>
+</div>
+
+<div id="results"></div>
+
+</div>
+
+<script type="module">
+import { extractLines, canonicalLines } from './pdf-lines.js';
+
+const PDFJS_BASE = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/';
+const GOLDEN_URL = '../tests/lines_golden.json';
+
+const results = document.getElementById('results');
+
+const pdfjsReady = (async () => {
+  const lib = await import(`${PDFJS_BASE}pdf.min.mjs`);
+  lib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE}pdf.worker.min.mjs`;
+  return lib;
+})();
+
+const goldenReady = fetch(GOLDEN_URL).then((r) => {
+  if (!r.ok) throw new Error(`no pude leer ${GOLDEN_URL} (${r.status})`);
+  return r.json();
+});
+
+document.getElementById('input').addEventListener('change', async (e) => {
+  results.innerHTML = '';
+  let golden;
+  try {
+    golden = await goldenReady;
+  } catch (err) {
+    report('—', 'fail', err.message);
+    return;
+  }
+
+  for (const file of e.target.files) {
+    if (!golden[file.name]) {
+      report(file.name, 'fail', 'no está en el golden');
+      continue;
+    }
+    const expected = canonicalLines(golden[file.name]);
+    let actual;
+    try {
+      actual = await extractLines(await pdfjsReady, await file.arrayBuffer());
+    } catch (err) {
+      report(file.name, 'fail', `error al extraer: ${err.message}`);
+      continue;
+    }
+
+    if (actual.join(' ') !== expected.join(' ')) {
+      report(file.name, 'fail', 'el contenido no coincide', diffLines(actual, expected));
+    } else if (actual.length !== expected.length) {
+      report(file.name, 'regrouped',
+        `mismo contenido, ${Math.abs(actual.length - expected.length)} línea(s) agrupadas distinto`,
+        diffLines(actual, expected));
+    } else {
+      report(file.name, 'ok', `${actual.length} líneas idénticas`);
+    }
+  }
+});
+
+function diffLines(actual, expected) {
+  const out = [];
+  const max = Math.max(actual.length, expected.length);
+  for (let i = 0; i < max && out.length < 12; i++) {
+    if (actual[i] !== expected[i]) {
+      out.push(`línea ${i}\n  pdf.js  : ${JSON.stringify(actual[i])}\n  PyMuPDF : ${JSON.stringify(expected[i])}`);
+    }
+  }
+  return out.join('\n');
+}
+
+function report(name, cls, message, detail) {
+  const div = document.createElement('div');
+  div.className = 'result';
+  const h = document.createElement('h3');
+  h.className = cls;
+  h.textContent = `${cls === 'ok' ? 'OK' : cls === 'regrouped' ? 'OK*' : 'FALLA'} — ${name}: ${message}`;
+  div.appendChild(h);
+  if (detail) {
+    const pre = document.createElement('pre');
+    pre.textContent = detail;
+    div.appendChild(pre);
+  }
+  results.appendChild(div);
+}
+</script>
+</body>
+</html>
